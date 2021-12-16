@@ -13,14 +13,18 @@ from git import Repo
 __version = '0.0.1'
 
 
+def _err(err):
+    return f'thaw: error: {err}'
+
+def _dbg(err):
+    return f'[DEBUG] {err}'
+
 def is_problem_dir(dir_path):
     return (dir_path / 'info.yml').is_file() \
        and is_repository_dir(dir_path.parent)
 def is_repository_dir(dir_path):
     return (dir_path / '.git').is_dir() \
        and is_all_repositories_dir(dir_path.parent)
-def is_all_repositories_dir(dir_path):
-    return (dir_path / 'config.yml').is_file()
 
 # dir of a single problem (a directory with info.yml)
 def problem_dir():
@@ -40,69 +44,34 @@ def repository_dir():
     else:
         return False
 
-# dir of all the repositories (a directory with config.yml)
-def all_repositories_dir():
-    cwd = Path.cwd()
-    if is_problem_dir(cwd):
-        return cwd.parents[2]
-    elif is_repository_dir(cwd):
-        return cwd.parent
-    elif is_all_repositories_dir(cwd):
-        return cwd
-    else:
-        return False
-
 def copy_data(file_name, dir_path):
     data = pkg_resources.resource_string(__name__, file_name)
     with open(dir_path / file_name, 'rt') as target_file:
         target_file.write(data)
 
-# init a single problem by adding a info.yml
-# init a repository with git
-# init a directory of all the repositories by adding a config.yml
+# init a single problem by adding a config.yml
 def init(args):
-    if is_repository_dir(args.dir_path.parent):
-        copy_data('info.yml', args.dir_path)
-    elif is_all_repositories_dir(args.dir_path.parent):
-        repo = Repo.init(args.dir_path + '/.git/', bare=True)
-    # else:
-    #     copy_data('config.yml', args.dir_path)
+    # if is_repository_dir(args.dir_path.parent):
+    copy_data('config.yml', args.dir_path)
 
-# TODO: unknown platform error
-# TODO: open multiple files at the same time
-# open a file with default software
-def open(args):
-    except_ext_map = ['tex', 'pdf', 'doc', 'docx']
-    if args.file_path.suffix not in except_ext_map:
-        click.edit(filename=str(args.path))
-    else:
-        if sys.platform in ('linux', 'linux2'):
-            subprocess.call(["xdg-open", args.path])
-        elif sys.platform in ('win32', 'win64'):
-            os.startfile(args.path)
-        elif sys.platform == 'darwin':
-            subprocess.call(["open", args.path])
-        else:
-            raise UnknownPlatformError
-
-# find and open description doc of a problem
-def open_doc(dir_path):
-    extlist = ['md', 'txt', 'tex', 'pdf', 'rst', 'doc', 'docx']
-    for ext in extlist:
-        if Path(dir_path / (str(dir_path.name) + ext)).is_file():
-            open(dir_path / (str(dir_path.name) + ext))
-            return True
-    return False
-
-# TODO: add "ext" in config.yml
 def do(args):
-    open_doc(args.path.parent)
-    if args.path.is_file():
-        open(args.path)
-    elif args.path.is_dir():
-        new_count = len(list(args.path.glob('*.' + args.ext))) + 1
-        open(str(args.path) + str(args.path.name) + '_' + str(count) + args.ext)
+    click.edit(filename=str(args.path))
 
+def complie_by_args(args):
+    try:
+        subprocess.run(args, check=True, timeout=10, output=sys.stdout, stderr=sys.stderr)
+    except TimeoutExpired as timeout_expired:
+        raise TimeoutExpired(_err('compile timeout')) from timeout_expired
+    except CalledProcessError as called_process_error:
+        raise CalledProcessError(_err('compile error'))
+
+def compile_by_ext(code):
+
+
+def execute(program, input, output):
+    if code.suffix == '':
+        pass
+        # os.system(str(code) + ' ' + )
 
 class StrictPath:
     def __call__(self, arg):
@@ -137,10 +106,10 @@ subparsers = parser.add_subparsers(help='sub-command help')
 parser_init = subparsers.add_parser(
     'init',
     aliases='i',
-    help='init a problem, a repository, or the directory of all repositories'
+    help='init a single problem by adding a config.yml'
 )
 # do not set default for position arguments
-parser_init.add_argument('dir_path', type=Path)
+parser_init.add_argument('path', type=Path)
 parser_init.set_defaults(func=init)
 
 # create the parser for the "open" command
