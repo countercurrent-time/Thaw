@@ -7,7 +7,6 @@ from pathlib import Path
 
 import yaml
 import click
-from git import Repo
 
 
 __version = '0.0.1'
@@ -19,8 +18,8 @@ def _err(err):
 def _dbg(err):
     return f'[DEBUG] {err}'
 
-def is_problem_dir(dir_path):
-    return (dir_path / 'info.yml').is_file() \
+#def is_problem_dir(dir_path):
+    return (dir_path / 'config.yml').is_file() \
        and is_repository_dir(dir_path.parent)
 def is_repository_dir(dir_path):
     return (dir_path / '.git').is_dir() \
@@ -46,6 +45,7 @@ def repository_dir():
     else:
         return False
 
+# dif of all the repositories (a directory with compile_args.yml)
 def all_repositories_dir():
     cwd = Path.cwd()
     if is_problem_dir(cwd):
@@ -57,6 +57,7 @@ def all_repositories_dir():
     else:
         return False
 
+
 def copy_data(file_name, dir_path):
     data = pkg_resources.resource_string(__name__, file_name)
     with open(dir_path / file_name, 'rt') as target_file:
@@ -67,25 +68,10 @@ def init(args):
     # if is_repository_dir(args.dir_path.parent):
     copy_data('config.yml', args.dir_path)
 
-def do(args):
-    click.edit(filename=str(args.path))
-
-# TODO: find a package in python to replace "which"
-def complie(args):
-    with open(all_repositories_dir() / 'complie_args.yml', 'r') as file:
-        for command in yaml.load(file)[args.code.suffix][args.option]:
-            if os.system('which ' + command.spilt(' ')[0])
-    try:
-        subprocess.run(args, check=True, timeout=10, output=sys.stdout, stderr=sys.stderr)
-    except TimeoutExpired as timeout_expired:
-        raise TimeoutExpired(_err('compile timeout')) from timeout_expired
-    except CalledProcessError as called_process_error:
-        raise CalledProcessError(_err('compile error'))
-
-def execute(program, input, output):
-    if code.suffix == '':
-        pass
-        # os.system(str(code) + ' ' + )
+def submit(args):
+    checker = args.code.parent / 'checker.py'
+    if checker.is_file():
+        subprocess.run(args.code.parent / 'checker.py', output=sys.stdout, stderr=sys.stderr)
 
 class StrictPath:
     def __call__(self, arg):
@@ -126,20 +112,11 @@ parser_init = subparsers.add_parser(
 parser_init.add_argument('path', type=Path)
 parser_init.set_defaults(func=init)
 
-# create the parser for the "open" command
-parser_open = subparsers.add_parser(
-    'open',
-    aliases='o',
-    help='open a file or a directory'
-)
-parser_open.add_argument('path', type=StrictPath())
-parser_open.set_defaults(func=open)
-
-# create the parser for the "do" command ...
-parser_do = subparsers.add_parser(
-    'do',
-    aliases='d',
-    help='open the description of a problem and open the source code'
+# create the parser for the "submit" command ...
+parser_submit = subparsers.add_parser(
+    'submit',
+    aliases='s',
+    help='submit and judge the code'
 )
 parser_do.add_argument('path', type=StrictPath())
 parser_do.add_argument('ext', type=str)
