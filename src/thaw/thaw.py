@@ -25,6 +25,8 @@ def is_problem_dir(dir_path):
 def is_repository_dir(dir_path):
     return (dir_path / '.git').is_dir() \
        and is_all_repositories_dir(dir_path.parent)
+def is_all_repositories_dir(dir_path):
+    return (dir_path / 'compile_args.yml').is_file()
 
 # dir of a single problem (a directory with info.yml)
 def problem_dir():
@@ -44,6 +46,17 @@ def repository_dir():
     else:
         return False
 
+def all_repositories_dir():
+    cwd = Path.cwd()
+    if is_problem_dir(cwd):
+        return cwd.parent.parent
+    elif is_repository_dir(cwd):
+        return cwd.parent
+    elif is_all_repositories_dir(cwd):
+        return cwd
+    else:
+        return False
+
 def copy_data(file_name, dir_path):
     data = pkg_resources.resource_string(__name__, file_name)
     with open(dir_path / file_name, 'rt') as target_file:
@@ -57,9 +70,13 @@ def init(args):
 def do(args):
     click.edit(filename=str(args.path))
 
-def complie_by_args(args):
+# TODO: find a package in python to replace "which"
+def complie(args):
+    with open(all_repositories_dir() / 'complie_args.yml', 'r') as file:
+        for command in yaml.load(file)[args.code.suffix][args.option]:
+            if os.system('which ' + command.spilt(' ')[0])
     try:
-        subprocess.run(args, check=True, timeout=1, output=sys.stdout, stderr=sys.stderr)
+        subprocess.run(args, check=True, timeout=10, output=sys.stdout, stderr=sys.stderr)
     except TimeoutExpired as timeout_expired:
         raise TimeoutExpired(_err('compile timeout')) from timeout_expired
     except CalledProcessError as called_process_error:
