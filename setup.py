@@ -49,7 +49,7 @@ setup(
     ],  # Optional
 
     package_data={  # Optional
-        '': ['repositories.dat', 'config.yml', 'info.yml'],
+        '': ['repositories.dat', 'config.yml', 'complie_args.yml'],
     },
 
     # To provide executable scripts, use entry points in preference to the

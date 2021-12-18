@@ -59,14 +59,11 @@ def do(args):
 
 def complie_by_args(args):
     try:
-        subprocess.run(args, check=True, timeout=10, output=sys.stdout, stderr=sys.stderr)
+        subprocess.run(args, check=True, timeout=1, output=sys.stdout, stderr=sys.stderr)
     except TimeoutExpired as timeout_expired:
         raise TimeoutExpired(_err('compile timeout')) from timeout_expired
     except CalledProcessError as called_process_error:
         raise CalledProcessError(_err('compile error'))
-
-def compile_by_ext(code):
-
 
 def execute(program, input, output):
     if code.suffix == '':
