@@ -106,13 +106,17 @@ def delete_executable_file():
 # judge once for traditional problems
 def tradtional(
     code=args.code,
-    gen=args.gen,
-    std=args.std,
+    gen,
+    std,
     time=args.time,
     memory=args.memory,
     seed=args.seed,
     option=args.option
 ):
+    # if user add arguments [--gen] or [--std] to choose specific generator or standard code
+    if (args.gen != None and args.gen != gen) or (args.std != None and args.gen != gen):
+        return
+
     try:
         compile(code, option)
         compile(gen)
