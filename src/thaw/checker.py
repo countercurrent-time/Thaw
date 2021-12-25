@@ -1,67 +1,153 @@
-#def is_problem_dir(dir_path):
-    return (dir_path / 'info.yml').is_file() \
-       and is_repository_dir(dir_path.parent)
-def is_repository_dir(dir_path):
-    return (dir_path / '.git').is_dir() \
-       and is_all_repositories_dir(dir_path.parent)
-def is_all_repositories_dir(dir_path):
-    return (dir_path / 'compile_args.yml').is_file()
+import argparse
+import subprocess
+import os
+import sys
+import shlex
+from pathlib import Path
+# import re
 
-# dir of a single problem (a directory with info.yml)
-def problem_dir():
-    cwd = Path.cwd()
-    if is_problem_dir(cwd):
-        return cwd
-    else:
-        return False
+import yaml
 
-# dir of a repository of problems (must be a git repository)
-def repository_dir():
-    cwd = Path.cwd()
-    if is_problem_dir(cwd):
-        return cwd.parent
-    elif is_repository_dir(cwd):
-        return cwd
-    else:
-        return False
+from thaw import problem_dir, repository_dir, all_repositories_dir
+from thaw import parse_yaml
+from thaw import StrictPath, StrictFilePath
 
-def all_repositories_dir():
-    cwd = Path.cwd()
-    if is_problem_dir(cwd):
-        return cwd.parent.parent
-    elif is_repository_dir(cwd):
-        return cwd.parent
-    elif is_all_repositories_dir(cwd):
-        return cwd
-    else:
-        return False
- TODO: find a package in python to replace "which"
-def complie(args):
-    with open(all_repositories_dir() / 'complie_args.yml', 'r') as file:
-        for command in yaml.load(file)[args.code.suffix][args.option]:
-            if sys.platform in ('linux', 'linux2') \
-                    and os.system('which ' + command.spilt(' ')[0]):
-                compile_by_command(command)
-            elif sys.platform in ('win32', 'win64') \
-                    and os.system('where ' + command.spilt(' ')[0]):
-                compile_by_command(command)
-
-def compile_by_command(command):
-    command = command.replace('%s.*', )
+# get command by option from compile_args.yml
+# "run" option refers to execute the program directly
+def get_command(code, option):
     try:
-        subprocess.run(command, check=True, timeout=10, output=sys.stdout, stderr=sys.stderr)
-    except TimeoutExpired as timeout_expired:
-        raise TimeoutExpired(_err('compile timeout')) from timeout_expired
-    except CalledProcessError as called_process_error:
-        raise CalledProcessError(_err('compile error'))
+        command = parse_yaml(all_repositories_dir() / 'complie_args.yml')[code.suffix][option]
+        return shlex.split(command.replace('%s.*', code).replace('%s', code.stem))
+    except KeyError as key_error:
+        if option == 'run':
+            return [code.stem]
+        raise argparse.ArgumentTypeError('nonexistent option') from key_error
 
-def execute(program, input, output):
-    interpreters_dict = {
-        'py': 'python',
-        'sh': 'bash',
-    }
-    if code.suffix in interpreters_dict:
-        subprocess.run(interpreters_dict[code.suffix] + ' ' + str(code), checkout=True, timeout=1)
+# run a command by subprocess.run and catch the exception
+def execute(command, time=None, memory=None, stdin=None, stdout=None, stderr=None):
+    try:
+        return subprocess.run(command, check=True, timeout=time, stdin=stdin, stdout=stdout, stderr=stderr)
+    except TimeoutExpired as timeout_expired:
+        raise TimeoutExpired(_err('Time Limit Exceeded')) from timeout_expired
+    except CalledProcessError as called_process_error:
+        raise CalledProcessError(_err('Runtime Error')) from called_process_error
+
+# specific form of execute() for compilation
+def compile(code, option='default', stdout=None, stderr=None):
+    try:
+        return execute(get_command(code, option), time=10, stdout=stdout, stderr=stderr)
+    except:
+        sys.stderr.write(' '.join(command) + ': Compile Error')
+        raise
+
+# specific form of execute() for data generator
+def generate(gen, seed, stdin=None, stdout=None, stderr=None):
+    try:
+        return execute(get_command(gen, 'run').append(seed), stdin=stdin, stdout=stdout, stderr=stderr)
+    except:
+        sys.stderr.write(' '.join(command) + ': Generator Program Error')
+        raise
+
+# specific form of execute() for standard code
+def execute_std(std, time=None, memory=None, stdin=None, stdout=None, stderr=None):
+    try:
+        return execute(get_command(std, 'run'), time=time, space=space, stdin=stdin, stdout=stdout, stderr=stderr)
+    except:
+        sys.stderr.write(' '.join(command) + ': Standard Program Error')
+        raise
+
+# specific form of execute() for user's code
+def execute_code(code, time=None, memory=None, stdin=None, stdout=None, stderr=None):
+    try:
+        return execute(get_command(code, 'run'), time=time, memory, stdin=stdin, stdout=stdout, stderr=stderr)
+    except:
+        raise
+
+# split stdout and stderr of a subprocess
+def parse_output(process):
+    if process.stderr != None:
+        sys.stderr.write(' '.join(process.args) + ':')
+        sys.stderr.write(process.stderr)
+    return process.stdout
+
+# ignore space at the end of line and newline at the end of file
+def ignore_final_blank(data):
+    return data.rstrip().replace('\s\r\n', '').replace('\s\n', '').replace('\s\r', '')
+
+# ignore all of the blank
+def ignore_all_blank(data):
+    return data.replace('\s', '')
+
+# diff answer and output
+def normal_diff(ans, out):
+    if ignore_final_blank(ans) == ignore_final_blank(out):
+        return 'Accepted'
     else:
-        subprocess.run(str(code), checkout=True, timeout=1)
+        return 'Wrong Answer'
+
+# diff answer and output but can also show Presentation Error
+def normal_diff_with_pe(ans, out):
+    if ignore_final_blank(ans) == ignore_final_blank(out):
+        return 'Accepted'
+    elif ignore_all_blank(ans) == ignore_all_blank(out):
+        return 'Presentation Error'
+    else:
+        return 'Wrong Answer'
+
+def delete_executable_file():
+    if args.no_delete == False:
+        if code.suffix != '':
+            code.stem.unlink()
+        if gen.suffix != '':
+            gen.stem.unlink()
+        if std.suffix != '':
+            std.stem.unlink()
+
+# judge once for traditional problems
+def tradtional(
+    code=args.code,
+    gen=args.gen,
+    std=args.std,
+    time=args.time,
+    memory=args.memory,
+    seed=args.seed,
+    option=args.option
+):
+    try:
+        compile(code, option)
+        compile(gen)
+        compile(std)
+
+        data = parse_output(gen_execute(gen, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+        ans = parse_output(execute_std(std, time=time, stdin=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+    except:
+        raise
+    finally:
+        delete_executable_file()
+
+    try:
+        out = parse_output(execute_code(code, time=time, stdin=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+        return normal_diff(ans, out)
+    except TimeoutExpired:
+        return 'Time Limit Exceeded'
+    except CalledProcessError:
+        return 'Runtime Error'
+    finally:
+        delete_executable_file()
+
+if __name == '__main__':
+    pass
+else:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('code', type=StrictFilePath())
+    parser.add_argument('--gen', type=StrictFilePath(), default=None)
+    parser.add_argument('--std', type=StrictFilePath(), default=None)
+    parser.add_argument('--time', type=float, default=None)
+    parser.add_argument('--memory', type=float, default=None)
+    parser.add_argument('--seed', type=int, default=None)
+    parser.add_argument('--option', type=str, default='default')
+    parser.add_argument('--no-delete', action='store_true')
+    print(args.time)
+
+    args = parser.parse_args()
 

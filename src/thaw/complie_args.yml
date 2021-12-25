@@ -1,22 +1,15 @@
 cpp:
-  default:
-    - clang %s.* -o %s
-    - g++ %s.* -o %s
-    - gcc %s.* -o %s
+    default: gcc %s.* -o %s
 cc:
-  default:
-    - clang %s.* -o %s
-    - g++ %s.* -o %s
-    - gcc %s.* -o %s
+    default: gcc %s.* -o %s
 cxx:
-  default:
-    - clang %s.* -o %s
-    - g++ %s.* -o %s
-    - gcc %s.* -o %s
+    default: gcc %s.* -o %s
+c:
+    default: gcc %s.* -o %s
 py:
-  default:
-    - 
+    default: 
+    run: python %s.*
 sh:
-  default:
-    -
+    default:
+    run: bash %s.*
 

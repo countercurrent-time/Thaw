@@ -18,7 +18,7 @@ def _err(err):
 def _dbg(err):
     return f'[DEBUG] {err}'
 
-#def is_problem_dir(dir_path):
+def is_problem_dir(dir_path):
     return (dir_path / 'config.yml').is_file() \
        and is_repository_dir(dir_path.parent)
 def is_repository_dir(dir_path):
@@ -27,7 +27,7 @@ def is_repository_dir(dir_path):
 def is_all_repositories_dir(dir_path):
     return (dir_path / 'compile_args.yml').is_file()
 
-# dir of a single problem (a directory with info.yml)
+# dir of a single problem (a directory with config.yml)
 def problem_dir():
     cwd = Path.cwd()
     if is_problem_dir(cwd):
@@ -63,20 +63,41 @@ def copy_data(file_name, dir_path):
     with open(dir_path / file_name, 'rt') as target_file:
         target_file.write(data)
 
-# init a single problem by adding a config.yml
-def init(args):
-    # if is_repository_dir(args.dir_path.parent):
-    copy_data('config.yml', args.dir_path)
+def parse_yaml(path_to_yaml_file):
+    with Path(path_to_yaml_file).open() as file:
+        return yaml.load(file)
 
+# init a single problem by adding a config.yml
+# `git init` should be used manually to init a repository of problems
+# init the directory of all the repositories by adding a compile_args.yml
+def init(args):
+    try:
+        args.dir_path.mkdir(exist_ok=True)
+    except FileNotFoundError:
+        raise
+    except FileExistsError:
+        raise
+    if is_repository_dir(args.dir_path.parent):
+        copy_data('config.yml', args.dir_path)
+    else:
+        copy_data('compile_args.yml', args.dir_path)
+
+# submit a code by executing the checker.py.
+# TODO: still compatible to other problems without checker.py
 def submit(args):
     checker = args.code.parent / 'checker.py'
     if checker.is_file():
-        subprocess.run(args.code.parent / 'checker.py', output=sys.stdout, stderr=sys.stderr)
+        subprocess.run(
+            [str(args.code.parent / 'checker.py'), str(args.code)],
+            output=sys.stdout,
+            stderr=sys.stderr
+        )
 
+# used for type checking and type conversion when parsing arguments.
 class StrictPath:
     def __call__(self, arg):
         try:
-            value = Path(arg).expanduser().resolve(strict=True)
+            value = Path(arg).resolve(strict=True)
         except FileNotFoundError as file_not_found_error:
             raise self.exception() from file_not_found_error
         return value
@@ -84,18 +105,18 @@ class StrictPath:
     def exception(self):
         return argparse.ArgumentTypeError('Must be a existing path')
 
-class StrictDirPath:
+class StrictFilePath:
     def __call__(self, arg):
         try:
-            value = Path(arg).expanduser().resolve(strict=True)
+            value = Path(arg).resolve(strict=True)
         except FileNotFoundError as file_not_found_error:
-            raise self.exception from file_not_found_error
-        if not value.is_dir():
+            raise self.exception() from file_not_found_error
+        if not value.is_file():
             raise self.exception()
         return value
 
     def exception(self):
-        return argparse.ArgumentTypeError('Must be a existing directory')
+        return argparse.ArgumentTypeError('Must be a existing file')
 
 # create the top-level parser
 parser = argparse.ArgumentParser()
@@ -109,7 +130,7 @@ parser_init = subparsers.add_parser(
     help='init a single problem by adding a config.yml'
 )
 # do not set default for position arguments
-parser_init.add_argument('path', type=Path)
+parser_init.add_argument('dir_path', type=Path)
 parser_init.set_defaults(func=init)
 
 # create the parser for the "submit" command ...
@@ -118,11 +139,11 @@ parser_submit = subparsers.add_parser(
     aliases='s',
     help='submit and judge the code'
 )
-parser_do.add_argument('path', type=StrictPath())
-parser_do.add_argument('ext', type=str)
-parser_do.set_defaults(func=do)
+parser_submit.add_argument('code', type=StrictFilePath())
+parser_submit.set_defaults(func=submit)
 
-args = parser.parse_args(namespace=argparse.Namespace(dir_path=Path.cwd(), path=Path.cwd()))
+# args = parser.parse_args(namespace=argparse.Namespace())
+args = parser.parse_args()
 
 # manual print help by this when there is no argument.
 # see https://bugs.python.org/issue9253
