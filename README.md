@@ -20,6 +20,8 @@ Package will be created and be released on pip and GitHub after enough improveme
 
 See `./docs/manual.md`.
 
+Also See [sampleproblem](https://github.com/countercurrent-time/sampleproblem) about how to write a problem with Thaw for example.
+
 ## Usage
 
 Sorry for the project being incompleted. But it will be completed as quick as possible.

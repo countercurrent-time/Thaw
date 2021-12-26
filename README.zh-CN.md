@@ -20,6 +20,8 @@ Thaw 是一个支持分布式题库的离线评测系统，大家可以使用 Th
 
 参考 `./docs/manual.md`。
 
+还可以参考 [sampleproblems](https://github.com/countercurrent-time/sampleproblem) 作为使用 Thaw 编写题目的示例。
+
 ## 示例
 
 很抱歉项目还未经过完善，但是项目会很快被完善。
