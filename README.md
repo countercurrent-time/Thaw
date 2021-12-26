@@ -8,7 +8,9 @@ We request people who write problems add licenses to their problems or clear cop
 
 By making it off-line, distributed and based on GitHub, situations in which a few administrators examine a large number of problems can be prevented. The nice atmosphere on GitHub can also make quanlity of discussion higher.
 
-We also hope to improve traditional methods of judging. Making it off-line helps avoid creating motivation of cheating, and we hope people do not exceedingly pursue the optimization of the program, but concentrate on things like the readability of code. We will support less strict limit of time and memory
+We also hope to improve traditional methods of judging. Making it off-line helps avoid creating motivation of cheating, and we hope people do not exceedingly pursue the optimization of the program, but concentrate on things like the readability of code. We will support judging with less strict limit of time and memory, and estimating the polynomial time complexity of a program.
+
+We will make it simple to configure and highly hackable too.
 
 ## Installation
 
