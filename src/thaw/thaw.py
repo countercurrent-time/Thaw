@@ -60,15 +60,13 @@ def all_repositories_dir():
 
 def copy_data(file_name, dir_path):
     data = pkg_resources.resource_string(__name__, file_name)
-    with open(dir_path / file_name, 'rt') as target_file:
+    with open(dir_path / file_name, 'wb') as target_file:
         target_file.write(data)
 
 def parse_yaml(path_to_yaml_file):
     with Path(path_to_yaml_file).open() as file:
-        return yaml.load(file)
+        return yaml.safe_load(file)
 
-# init a single problem by adding a config.yml
-# `git init` should be used manually to init a repository of problems
 # init the directory of all the repositories by adding a compile_args.yml
 def init(args):
     try:
@@ -77,10 +75,19 @@ def init(args):
         raise
     except FileExistsError:
         raise
-    if is_repository_dir(args.dir_path.parent):
-        copy_data('config.yml', args.dir_path)
     else:
         copy_data('compile_args.yml', args.dir_path)
+
+# new a single problem by adding a config.yml
+def new(args):
+    try:
+        args.dir_path.mkdir(exist_ok=True)
+    except FileNotFoundError:
+        raise
+    except FileExistsError:
+        raise
+    else:
+        copy_data('config.yml', args.dir_path)
 
 # submit a code by executing the checker.py.
 # TODO: still compatible to other problems without checker.py
@@ -88,8 +95,8 @@ def submit(args):
     checker = args.code.parent / 'checker.py'
     if checker.is_file():
         subprocess.run(
-            [str(args.code.parent / 'checker.py'), str(args.code)],
-            output=sys.stdout,
+            ['python3', str(args.code.parent / 'checker.py')] + sys.argv[2:],
+            stdout=sys.stdout,
             stderr=sys.stderr
         )
 
@@ -118,41 +125,55 @@ class StrictFilePath:
     def exception(self):
         return argparse.ArgumentTypeError('Must be a existing file')
 
-# create the top-level parser
-parser = argparse.ArgumentParser()
+def command_line_runner():
 
-subparsers = parser.add_subparsers(help='sub-command help')
+    # create the top-level parser
+    parser = argparse.ArgumentParser()
 
-# create the parser for the "init" command
-parser_init = subparsers.add_parser(
-    'init',
-    aliases='i',
-    help='init a single problem by adding a config.yml'
-)
-# do not set default for position arguments
-parser_init.add_argument('dir_path', type=Path)
-parser_init.set_defaults(func=init)
+    subparsers = parser.add_subparsers(help='sub-command help')
 
-# create the parser for the "submit" command ...
-parser_submit = subparsers.add_parser(
-    'submit',
-    aliases='s',
-    help='submit and judge the code'
-)
-parser_submit.add_argument('code', type=StrictFilePath())
-parser_submit.set_defaults(func=submit)
+    # create the parser for the "init" command
+    parser_init = subparsers.add_parser(
+        'init',
+        aliases='i',
+        help='init a directory for all repositories of problems by adding a compile_args.yml'
+    )
+    # do not set default for position arguments
+    parser_init.add_argument('dir_path', type=Path)
+    parser_init.set_defaults(func=init)
 
-# args = parser.parse_args(namespace=argparse.Namespace())
-args = parser.parse_args()
+    # create the parser for the "new" command
+    parser_init = subparsers.add_parser(
+        'new',
+        aliases='n',
+        help='new a single problem by adding a config.yml'
+    )
+    # do not set default for position arguments
+    parser_init.add_argument('dir_path', type=Path)
+    parser_init.set_defaults(func=new)
 
-# manual print help by this when there is no argument.
-# see https://bugs.python.org/issue9253
-#     https://bugs.python.org/issue16308
-# and parser.set_defaults(func=parser.print_help) failed.
-# Though this below look quite manual compared to the usual way of using argparse.
-if len(args.__dict__) <= 1:
-    parser.print_help()
-    parser.exit()
+    # create the parser for the "submit" command ...
+    parser_submit = subparsers.add_parser(
+        'submit',
+        aliases='s',
+        help='submit and judge the code'
+    )
+    parser_submit.add_argument('code', type=StrictFilePath())
+    parser_submit.set_defaults(func=submit)
 
-args.func(args)
+    # args = parser.parse_args(namespace=argparse.Namespace())
+    args = parser.parse_args()
 
+    # manual print help by this when there is no argument.
+    # see https://bugs.python.org/issue9253
+    #     https://bugs.python.org/issue16308
+    # and parser.set_defaults(func=parser.print_help) failed.
+    # Though this below look quite manual compared to the usual way of using argparse.
+    if len(args.__dict__) <= 1:
+        parser.print_help()
+        parser.exit()
+
+    args.func(args)
+
+if __name__ == '__main__':
+    command_line_runner()

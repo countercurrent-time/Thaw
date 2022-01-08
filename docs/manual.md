@@ -1,34 +1,28 @@
 Thaw now have two basic subcommand: `init` and 'submit'.
 
-# init
+# Initialization
 
-Init a directory with corresponding operation.
-
-Only need an argument like `thaw init path`.
-
-Thaw can distinguish three kinds of directories.
+There are three kinds of directories that should be initialled.
 
 ## The directory of all the repositories
 
 It has a `compile_args.yml` with the arguments for compilation, which can be called when user submit a code.
 
-Thaw will init any directories without any features by adding a `compile_args.yml`.
+Thaw will init any directories by adding a `compile_args.yml`.
 
 ## Directory of a repository of problems
 
 It is a git repository, and a subdirectory of the directory of all the repositories.
 
-User should init the directory manually by `git init`.
+`git init` should be used manually to init a repository of problems.
 
 ## Directory of a single problem
 
 It has a `config.yml` with all of information of the problem, and it is a subdirectory of the directory of a repository of problems.
 
-Thaw will init a subdirectory of the directory of a repository of problems by adding a `config.yml`.
+Thaw will new a problem by adding a `config.yml`.
 
 # submit
-
-Uncompleted.
 
 Submit a code and judge it.
 
@@ -36,8 +30,8 @@ Use it like `submit [path_of_your_code] [--gen] [--std] [--time] [--memory] [--s
 
 `path_of_your_code` must be in a directory of a problem.
 
-- gen: The data generator.
-- std: The standard code.
+- gen: The specific data generator. Checker will run every generator without it.
+- std: The specific standard code. Checker will run every standard program without it.
 - time: customlized time limit.
 - memory: customlized memory limit.
 - seed: random seed for pseudorandom.
@@ -45,7 +39,5 @@ Use it like `submit [path_of_your_code] [--gen] [--std] [--time] [--memory] [--s
 
 It will run the `checker.py` in the directory of the problem.
 
-The `checker.py` should use the API by `import thaw.checker`.
-
-See `./manual_checker.md`.
+The `checker.py` should use the API by `import thaw.checker`. See `./manual_checker.md`.
 

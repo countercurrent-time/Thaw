@@ -8,7 +8,7 @@ c:
     default: gcc %s.* -o %s
 py:
     default: 
-    run: python %s.*
+    run: python3 %s.*
 sh:
     default:
     run: bash %s.*

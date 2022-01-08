@@ -44,12 +44,10 @@ setup(
     python_requires='>=3.6, <4',
     install_requires=[
         'pyyaml',
-        'GitPython',
-        'click'
     ],  # Optional
 
     package_data={  # Optional
-        '': ['repositories.dat', 'config.yml', 'complie_args.yml'],
+        '': ['repositories.dat', 'config.yml', 'compile_args.yml'],
     },
 
     # To provide executable scripts, use entry points in preference to the
