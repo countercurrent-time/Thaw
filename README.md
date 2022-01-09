@@ -24,17 +24,13 @@ Also See [sampleproblem](https://github.com/countercurrent-time/sampleproblem) a
 
 ## Usage
 
-Sorry for the project being incompleted. But it will be completed as quick as possible.
-
-Below are expected result.
-
 Create a problem:
 
 ```bash
 thaw init .
 git init sampleproblem
 cd sampleproblem
-thaw init hello_world
+thaw new hello_world
 cd hello_world
 vim -p hello_world.zh-CN.md hello_world.en-US.md std.cpp std.py checker.py
 ```

@@ -1,4 +1,4 @@
-Thaw now have two basic subcommand: `init` and 'submit'.
+Thaw now have three basic subcommand: `init`, 'new', and 'submit'.
 
 # Initialization
 
@@ -22,7 +22,7 @@ It has a `config.yml` with all of information of the problem, and it is a subdir
 
 Thaw will new a problem by adding a `config.yml`.
 
-# submit
+# Submit
 
 Submit a code and judge it.
 
