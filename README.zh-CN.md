@@ -14,6 +14,13 @@ Thaw 是一个支持分布式题库的离线评测系统，大家可以使用 Th
 
 ## 安装
 
+```bash
+git clone https://github.com/countercurrent-time/Thaw.git
+pip install ./Thaw/
+```
+
+如果你是贡献者，可以使用 `pip install -e ./Thaw/` 。
+
 在 0.0.1 版本经过足够的完善和测试后，发行版会被创建，并被发布到 pip 和 GitHub 上。
 
 ## 使用说明

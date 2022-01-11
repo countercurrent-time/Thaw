@@ -14,6 +14,13 @@ We will make it simple to configure and highly hackable too.
 
 ## Installation
 
+```bash
+git clone https://github.com/countercurrent-time/Thaw.git
+pip install ./Thaw/
+```
+
+If you are a contributor, use `pip install -e ./Thaw/`.
+
 Package will be created and be released on pip and GitHub after enough improvement and tests on 0.0.1.
 
 ## Manual
