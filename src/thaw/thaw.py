@@ -8,7 +8,6 @@ from pathlib import Path
 import yaml
 import click
 
-
 __version = '0.0.1'
 
 

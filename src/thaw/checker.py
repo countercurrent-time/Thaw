@@ -50,11 +50,15 @@ def execute(command, time=None, memory=None, stdin=None, input=None, stdout=None
 
 class Judger:
 
-    def __init__(self, gen, std, time, memory, seed=None, option=None):
+    def __init__(self, time, memory, gen=None, std=None, seed=None, option=None):
         parser.parse_args(namespace=self)
 
-        self.gen = StrictFilePath()(gen)
-        self.std = StrictFilePath()(std)
+        os.chdir(self.code.parent)
+
+        if gen != None:
+            self.gen = StrictFilePath()(gen)
+        if std != None:
+            self.std = StrictFilePath()(std)
         self.time = time
         self.memory = memory
 
@@ -138,9 +142,9 @@ class Judger:
         if args.no_delete == False:
             if self.code.suffix != '' and Path(self.code.stem).is_file():
                 Path(self.code.stem).unlink()
-            if self.gen.suffix != '' and Path(self.gen.stem).is_file():
+            if self.gen != None and self.gen.suffix != '' and Path(self.gen.stem).is_file():
                 Path(self.gen.stem).unlink()
-            if self.std.suffix != '' and Path(self.std.stem).is_file():
+            if self.std != None and self.std.suffix != '' and Path(self.std.stem).is_file():
                 Path(self.std.stem).unlink()
 
     # judge once for traditional problems
