@@ -140,6 +140,7 @@ class Judger:
 
     def delete_executable_file(self):
         if args.no_delete == False:
+            # compatible with python 3.7
             if self.code.suffix != '' and Path(self.code.stem).is_file():
                 Path(self.code.stem).unlink()
             if self.gen != None and self.gen.suffix != '' and Path(self.gen.stem).is_file():
