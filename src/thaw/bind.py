@@ -1,38 +1,33 @@
 from pathlib import Path
 
-import yaml
+from ruamel.yaml import YAML
 
-a = Path('bindings.yml')
+yaml = YAML()
 
-class bind:
-    checker = False
+f = Path('bindings.yml')
 
-    def __init__(self):
-        a.touch(exist_ok=True)
-
-    def __del__(self):
-        # compatible with python 3.7
-        if self.checker == True and a.is_file():
-            a.unlink()
-
-b = bind()
+checker = None
 
 def put(key, value):
-    b.checker = True
-    with open(a, 'r') as f:
-        d = yaml.safe_load(f)
+    if checker == None:
+        checker == True
+    elif checker == False:
+        sys.stderr.write('Generator but modify bindings') 
+
+    d = yaml.load(f)
     if d == None:
         d = {}
-
     d[key] = value
-    
-    with open(a, 'w') as f:
-        f.write(yaml.dump(d))
+    yaml.dump(d, f)
 
 def get(key):
-    with open(a, 'r') as f:
-        try:
-            return yaml.safe_load(f)[key]
-        except:
-            print('Unexcepted key in bindings')
-            raise
+    if checker == None:
+        checker == False
+    elif checker == True:
+        sys.stderr.write('Checker but read bindings')
+
+    try:
+        return yaml.load(f)[key]
+    except:
+        print('Unexcepted key in bindings')
+        raise

@@ -7,7 +7,7 @@ from pathlib import Path
 # import re
 import random
 
-import yaml
+# import yaml
 
 from thaw.thaw import _err
 from thaw.thaw import problem_dir, repository_dir, all_repositories_dir

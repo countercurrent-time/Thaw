@@ -5,11 +5,12 @@ import subprocess
 import os
 from pathlib import Path
 
-import yaml
+from ruamel.yaml import YAML
 import click
 
 __version = '0.0.1'
 
+yaml = YAML()
 
 def _err(err):
     return f'thaw: error: {err}'
@@ -64,7 +65,7 @@ def copy_data(file_name, dir_path):
 
 def parse_yaml(path_to_yaml_file):
     with Path(path_to_yaml_file).open() as file:
-        return yaml.safe_load(file)
+        return yaml.load(file)
 
 # init the directory of all the repositories by adding a compile_args.yml
 def init(args):
