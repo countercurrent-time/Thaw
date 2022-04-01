@@ -1,4 +1,5 @@
 import argparse
+from subprocess import run, PIPE, TimeoutExpired, CalledProcessError
 import subprocess
 import os
 import sys
@@ -38,13 +39,13 @@ def execute(command, time=None, memory=None, stdin=None, input=None, stdout=None
     if command != []:
         try:
             if stdin == None:
-                return subprocess.run(command, check=True, timeout=time, input=input, stdout=stdout, stderr=stderr, text=True)
+                return run(command, check=True, timeout=time, input=input, stdout=stdout, stderr=stderr, text=True)
             else:
-                return subprocess.run(command, check=True, timeout=time, stdin=stdin, stdout=stdout, stderr=stderr, text=True)
-        except subprocess.TimeoutExpired as timeout_expired:
-            raise subprocess.TimeoutExpired(_err('Time Limit Exceeded')) from timeout_expired
-        except subprocess.CalledProcessError as called_process_error:
-            raise subprocess.CalledProcessError(_err('Runtime Error')) from called_process_error
+                return run(command, check=True, timeout=time, stdin=stdin, stdout=stdout, stderr=stderr, text=True)
+        except TimeoutExpired:
+            raise
+        except CalledProcessError:
+            raise
     else:
         return None
 
@@ -76,7 +77,7 @@ class Judger:
         try:
             return execute(command, time=10, stdout=stdout, stderr=stderr)
         except:
-            sys.stderr.write(' '.join(command) + ': Compile Error')
+            sys.stderr.write(' '.join(command) + ': Compile Error\n')
             raise
     
     # specific form of execute() for data generator
@@ -86,7 +87,7 @@ class Judger:
         try:
             return execute(command, stdin=stdin, stdout=stdout, stderr=stderr)
         except:
-            sys.stderr.write(' '.join(command) + ': Generator Program Error')
+            sys.stderr.write(' '.join(command) + ': Generator Program Error\n')
             raise
 
     # specific form of execute() for standard code
@@ -95,7 +96,7 @@ class Judger:
         try:
             return execute(command, time=self.time, memory=self.memory, stdin=stdin, input=input, stdout=stdout, stderr=stderr)
         except:
-            sys.stderr.write(' '.join(command) + ': Standard Program Error')
+            sys.stderr.write(' '.join(command) + ': Standard Program Error\n')
             raise
 
     # specific form of execute() for user's code
@@ -103,14 +104,15 @@ class Judger:
         command = get_command(self.code, 'run')
         try:
             return execute(command, time=self.time, memory=self.memory, stdin=stdin, input=input, stdout=stdout, stderr=stderr)
-        except:
-            sys.stderr.write(' '.join(command) + ': stderr of code of user')
+        except CalledProcessError:
+            raise
+        except TimeoutExpired:
             raise
 
     # split stdout and stderr of a subprocess
     def parse_output(process):
         if process.stderr != '':
-            sys.stderr.write(' '.join(process.args) + ':')
+            sys.stderr.write('stderr when running ' + ' '.join(process.args) + ':')
             sys.stderr.write(process.stderr)
         return process.stdout
     
@@ -156,22 +158,29 @@ class Judger:
 
         try:
             self.compile(self.code, stderr=sys.stderr)
-            self.compile(self.gen, stderr=sys.stderr)
-            self.compile(self.std, stderr=sys.stderr)
-
-            data = Judger.parse_output(self.generate(stdout=subprocess.PIPE, stderr=subprocess.PIPE))
-            ans = Judger.parse_output(self.execute_std(input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
         except:
-            raise
+            return 'Compilation Error'
 
         try:
-            out = Judger.parse_output(self.execute_code(input=data, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+            self.compile(self.gen, stderr=sys.stderr)
+            data = Judger.parse_output(self.generate(stdout=PIPE, stderr=PIPE))
+        except:
+            return 'Generator Program Error'
+        
+        try:
+            self.compile(self.std, stderr=sys.stderr)
+            ans = Judger.parse_output(self.execute_std(input=data, stdout=PIPE, stderr=PIPE))
+        except:
+            return 'Standard Program Error'
+
+        try:
+            out = Judger.parse_output(self.execute_code(input=data, stdout=PIPE, stderr=PIPE))
             self.delete_executable_file()
             return Judger.normal_diff_with_pe(ans, out)
-        except subprocess.TimeoutExpired:
+        except TimeoutExpired:
             self.delete_executable_file()
             return 'Time Limit Exceeded'
-        except subprocess.CalledProcessError:
+        except CalledProcessError:
             self.delete_executable_file()
             return 'Runtime Error'
     
@@ -181,20 +190,23 @@ class Judger:
 
         try:
             self.compile(self.code, stderr=sys.stderr)
-            self.compile(self.std, stderr=sys.stderr)
-
-            ans = Judger.parse_output(self.execute_std(stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
         except:
-            raise
+            return 'Compilation Error'
 
         try:
-            out = Judger.parse_output(self.execute_code(stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+            self.compile(self.std, stderr=sys.stderr)
+            ans = Judger.parse_output(self.execute_std(stdin=None, stdout=PIPE, stderr=PIPE))
+        except:
+            return 'Standard Program Error'
+
+        try:
+            out = Judger.parse_output(self.execute_code(stdin=None, stdout=PIPE, stderr=PIPE))
             self.delete_executable_file()
             return Judger.normal_diff_with_pe(ans, out)
-        except subprocess.TimeoutExpired:
+        except TimeoutExpired:
             self.delete_executable_file()
             return 'Time Limit Exceeded'
-        except subprocess.CalledProcessError:
+        except CalledProcessError:
             self.delete_executable_file()
             return 'Runtime Error'
 
