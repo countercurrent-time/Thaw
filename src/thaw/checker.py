@@ -4,7 +4,7 @@ import os
 import sys
 import shlex
 from pathlib import Path
-# import re
+import re
 import random
 
 # import yaml
@@ -120,7 +120,7 @@ class Judger:
 
     # ignore all of the blank
     def __ignore_all_blank(data):
-        return data.replace('\s', '')
+        return re.sub('\s', '', data)
 
     # diff answer and output
     def normal_diff(ans, out):
